@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  OsakaGPTS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        # BlockPublicAcls: false
+        # IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        # RestrictPublicBuckets: false
+      BucketName: OsakaGPT-public-read-bucket
+
+  BucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref OsakaGPTS3Bucket
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 's3:GetObject'
+            Effect: Allow
+            Resource: !Sub 'arn:aws:s3:::${OsakaGPTS3Bucket}/*'
+            Principal: '*'
+
+Outputs:
+  BucketURL:
+    Description: The URL of the S3 bucket
+    Value: !Sub 'http://${OsakaGPTS3Bucket}.s3.amazonaws.com/'

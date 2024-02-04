@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  OsakaGPTVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: OsakaGPTVPC
+
+  OsakaGPTSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref OsakaGPTVPC
+      CidrBlock: '10.0.1.0/24'
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: OsakaGPTSubnet
+
+  OsakaGPTIGW:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: OsakaGPTIGW
+
+  AttachGateway:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref OsakaGPTVPC
+      InternetGatewayId: !Ref OsakaGPTIGW
+
+  OsakaGPTRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref OsakaGPTVPC
+      Tags:
+        - Key: Name
+          Value: OsakaGPTRouteTable
+
+  OsakaGPTRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref OsakaGPTRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref OsakaGPTIGW
+
+  SubnetRouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref OsakaGPTSubnet
+      RouteTableId: !Ref OsakaGPTRouteTable
+
+  OsakaGPTSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: OsakaGPT security group
+      VpcId: !Ref OsakaGPTVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  OsakaGPTNetworkAcl:
+    Type: 'AWS::EC2::NetworkAcl'
+    Properties:
+      VpcId: !Ref OsakaGPTVPC
+
+  OsakaGPTEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: ami-0cf10cdf9fcd62d37
+      InstanceType: t2.micro
+      KeyName: osakagpt
+      SubnetId: !Ref OsakaGPTSubnet
+      SecurityGroupIds:
+        - !Ref OsakaGPTSecurityGroup
+
+  OsakaGPTEIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      InstanceId: !Ref OsakaGPTEC2Instance
