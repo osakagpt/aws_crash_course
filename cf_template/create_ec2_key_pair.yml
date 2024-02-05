@@ -1,0 +1,9 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A sample template
+Resources:
+  MyEC2KeyPair:
+    Type: "AWS::EC2::KeyPair"
+    Properties:
+      KeyName : myKey
+      KeyType : ed25519    
+              
