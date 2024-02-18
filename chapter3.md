@@ -65,7 +65,8 @@ ec2, iam, s3
 
 #### ややこしいと思ったポイント
 - vpcリソースはec2サービスに属している
-- バケットポリシーはIAMサービスではなくS3サービスに属している
+- IAMサービスのバケットポリシーは`AWS::S3::BucketPolicy`I
+- VPCのセキュリティグループはEC2インスタンスに付与する場合は`AWS::EC2::SecurityGroup`だし、DBインスタンスに付与する場合は`AWS::RDS::DBSecurityGroup`
 こういうの多そう
 
 ### regionの例

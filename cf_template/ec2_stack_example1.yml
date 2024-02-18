@@ -1,61 +1,79 @@
 AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  VpcCidr:
+    Description: The CIDR block for the VPC
+    Type: String
+    Default: '10.0.0.0/21'
+  MyIpParameter:
+    Type: String
+    Description: Your current public IP address
+    NoEcho: true
+
 Resources:
   OsakaGPTVPC:
     Type: 'AWS::EC2::VPC'
     Properties:
-      CidrBlock: '10.0.0.0/16'
+      CidrBlock: !Ref VpcCidr
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
         - Key: Name
           Value: OsakaGPTVPC
 
-  OsakaGPTSubnet:
+  PublicSubnet:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref OsakaGPTVPC
       CidrBlock: '10.0.1.0/24'
-      MapPublicIpOnLaunch: true
+      MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: OsakaGPTSubnet
+          Value: PublicSubnet
 
-  OsakaGPTIGW:
+  NormalIGW:
     Type: 'AWS::EC2::InternetGateway'
     Properties:
       Tags:
         - Key: Name
-          Value: OsakaGPTIGW
+          Value: NormalIGW
 
   AttachGateway:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:
       VpcId: !Ref OsakaGPTVPC
-      InternetGatewayId: !Ref OsakaGPTIGW
+      InternetGatewayId: !Ref NormalIGW
 
-  OsakaGPTRouteTable:
+  NormalRouteTable:
     Type: 'AWS::EC2::RouteTable'
     Properties:
       VpcId: !Ref OsakaGPTVPC
       Tags:
         - Key: Name
-          Value: OsakaGPTRouteTable
+          Value: NormalRouteTable
 
-  OsakaGPTRoute:
+  # LocalRoute:
+  #   Type: 'AWS::EC2::Route'
+  #   Properties:
+  #     RouteTableId: !Ref NormalRouteTable
+  #     DestinationCidrBlock: !Ref VpcCidr
+  #     GatewayId: 'local'
+
+  OutboundRoute:
     Type: 'AWS::EC2::Route'
     DependsOn: AttachGateway
     Properties:
-      RouteTableId: !Ref OsakaGPTRouteTable
+      RouteTableId: !Ref NormalRouteTable
       DestinationCidrBlock: '0.0.0.0/0'
-      GatewayId: !Ref OsakaGPTIGW
+      GatewayId: !Ref NormalIGW
 
   SubnetRouteTableAssociation:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
-      SubnetId: !Ref OsakaGPTSubnet
-      RouteTableId: !Ref OsakaGPTRouteTable
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref NormalRouteTable
 
-  OsakaGPTSecurityGroup:
+  EC2SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: OsakaGPT security group
@@ -65,23 +83,30 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
 
   OsakaGPTNetworkAcl:
     Type: 'AWS::EC2::NetworkAcl'
     Properties:
       VpcId: !Ref OsakaGPTVPC
 
-  OsakaGPTEC2Instance:
+  NormalEC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
       ImageId: ami-0cf10cdf9fcd62d37
       InstanceType: t2.micro
-      KeyName: osakagpt
-      SubnetId: !Ref OsakaGPTSubnet
-      SecurityGroupIds:
-        - !Ref OsakaGPTSecurityGroup
+      KeyName: virginiaKey2
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          AssociatePublicIpAddress: true
+          SubnetId: !Ref PublicSubnet
+          GroupSet:
+            - !Ref EC2SecurityGroup
 
   OsakaGPTEIP:
     Type: 'AWS::EC2::EIP'
     Properties:
-      InstanceId: !Ref OsakaGPTEC2Instance
+      InstanceId: !Ref NormalEC2Instance

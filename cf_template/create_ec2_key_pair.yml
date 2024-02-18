@@ -4,6 +4,6 @@ Resources:
   MyEC2KeyPair:
     Type: "AWS::EC2::KeyPair"
     Properties:
-      KeyName : myKey
+      KeyName : virginiaKey
       KeyType : ed25519    
               
