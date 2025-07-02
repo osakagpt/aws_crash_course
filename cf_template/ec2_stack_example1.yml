@@ -96,15 +96,23 @@ Resources:
   NormalEC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
-      ImageId: ami-0cf10cdf9fcd62d37
+      # ImageId: ami-0d889f77081190db1
+      # ImageId: ami-0d889f77081190db1
+      ImageId: ami-0d94353f7bad10668
       InstanceType: t2.micro
-      KeyName: virginiaKey2
+      # InstanceType: p2.xlarge
+      KeyName: virginiaKey
       NetworkInterfaces:
         - DeviceIndex: 0
           AssociatePublicIpAddress: true
           SubnetId: !Ref PublicSubnet
           GroupSet:
             - !Ref EC2SecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            VolumeSize: 20  # 20GB volume size
+            VolumeType: "gp3"  # General Purpose SSD
 
   OsakaGPTEIP:
     Type: 'AWS::EC2::EIP'
